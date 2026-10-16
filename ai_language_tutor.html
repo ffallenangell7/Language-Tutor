@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyglot AI - Language Tutor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .chat-container {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+
+        .pulse-animation {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        .message-appear {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .typing-dot {
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 text-slate-800">
+
+    <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-[90vh] sm:h-[80vh] border border-slate-100">
+        
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 sm:p-5 flex justify-between items-center z-10 shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <i class="fa-solid fa-earth-americas text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Polyglot AI</h1>
+                    <p class="text-blue-100 text-xs font-medium">Your Voice Language Tutor</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-white/10 rounded-lg p-1 border border-white/20">
+                <select id="languageSelect" class="bg-transparent text-white font-medium text-sm outline-none cursor-pointer appearance-none pl-3 pr-8 py-1.5" onchange="changeLanguage()">
+                    <option value="en-US" class="text-slate-800">🇬🇧 English</option>
+                    <option value="fr-FR" class="text-slate-800">🇫🇷 Français</option>
+                    <option value="pt-BR" class="text-slate-800">🇧🇷 Português</option>
+                </select>
+                <i class="fa-solid fa-chevron-down text-white/70 text-xs pr-3 absolute right-2 pointer-events-none"></i>
+            </div>
+        </header>
+
+        <!-- Chat Area -->
+        <main id="chatBox" class="flex-1 p-4 sm:p-6 overflow-y-auto chat-container bg-slate-50 flex flex-col gap-4 relative">
+            
+            <!-- Welcome Message -->
+            <div class="flex justify-center mb-4 message-appear">
+                <div class="bg-slate-200 text-slate-600 text-xs px-3 py-1.5 rounded-full font-medium">
+                    Session started. Select a language to begin.
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Typing Indicator (Hidden by default) -->
+        <div id="typingIndicator" class="hidden px-6 py-2 bg-slate-50">
+            <div class="flex items-center gap-2 w-fit bg-white border border-slate-200 text-slate-500 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+                <div class="flex gap-1">
+                    <div class="w-2 h-2 bg-slate-400 rounded-full typing-dot"></div>
+                    <div class="w-2 h-2 bg-slate-400 rounded-full typing-dot"></div>
+                    <div class="w-2 h-2 bg-slate-400 rounded-full typing-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Area -->
+        <footer class="bg-white border-t border-slate-200 p-4 sm:p-6 flex flex-col items-center justify-center gap-3 relative z-10">
+            <p id="statusText" class="text-sm font-medium text-slate-500 mb-1 h-5">Click to start the lesson</p>
+            
+            <div class="flex gap-4">
+                <button id="startLessonBtn" onclick="startInitialConversation()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-6 py-3 rounded-full font-semibold transition-all duration-200 shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> Start Lesson
+                </button>
+
+                <button id="micBtn" onclick="toggleMicrophone()" class="hidden bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i id="micIcon" class="fa-solid fa-microphone text-xl"></i>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- State Variables ---
+        let currentLangCode = 'en-US';
+        let isRecording = false;
+        let isSpeaking = false;
+        let chatHistory = [];
+        let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        const synth = window.speechSynthesis;
+
+        // UI Elements
+        const chatBox = document.getElementById('chatBox');
+        const micBtn = document.getElementById('micBtn');
+        const micIcon = document.getElementById('micIcon');
+        const statusText = document.getElementById('statusText');
+        const languageSelect = document.getElementById('languageSelect');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const startLessonBtn = document.getElementById('startLessonBtn');
+
+        // Language Configurations
+        const langConfig = {
+            'en-US': { name: 'English', greeting: 'Hello! I am your English tutor. How are you today?' },
+            'fr-FR': { name: 'French', greeting: 'Bonjour! Je suis votre professeur de français. Comment allez-vous aujourd\'hui?' },
+            'pt-BR': { name: 'Portuguese', greeting: 'Olá! Sou seu professor de português. Como você está hoje?' }
+        };
+
+        // --- Initialization ---
+        function initSpeechRecognition() {
+            if (!SpeechRecognition) {
+                showSystemMessage("Your browser does not support Speech Recognition. Please use Chrome or Edge.");
+                micBtn.disabled = true;
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Stop after a pause
+            recognition.interimResults = false; // Only final results
+            recognition.lang = currentLangCode;
+
+            recognition.onstart = function() {
+                isRecording = true;
+                updateMicUI();
+                statusText.innerText = "Listening...";
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                statusText.innerText = "Processing...";
+                handleUserSpeech(transcript);
+            };
+
+            recognition.onerror = function(event) {
+                // Ignore "no-speech" in console as it's a common, non-fatal timeout
+                if (event.error !== 'no-speech') {
+                    console.error("Speech recognition error:", event.error);
+                }
+                
+                isRecording = false;
+                updateMicUI();
+                
+                if (event.error === 'not-allowed') {
+                    statusText.innerText = "Microphone access denied.";
+                } else if (event.error === 'no-speech') {
+                    statusText.innerText = "No speech detected. Click mic to try again.";
+                    // Reset text after a few seconds
+                    setTimeout(() => {
+                        if (!isRecording && statusText.innerText.includes("No speech detected")) {
+                            statusText.innerText = "Ready to speak";
+                        }
+                    }, 3000);
+                } else {
+                    statusText.innerText = "Error recognizing speech. Try again.";
+                }
+            };
+
+            recognition.onend = function() {
+                isRecording = false;
+                updateMicUI();
+                if (statusText.innerText === "Listening...") {
+                    statusText.innerText = "Ready to speak";
+                }
+            };
+        }
+
+        // --- Core Application Logic ---
+
+        function changeLanguage() {
+            currentLangCode = languageSelect.value;
+            if (recognition) recognition.lang = currentLangCode;
+            
+            // Reset chat
+            chatBox.innerHTML = '';
+            chatHistory = [];
+            startLessonBtn.classList.remove('hidden');
+            micBtn.classList.add('hidden');
+            statusText.innerText = "Click to start the lesson";
+            
+            showSystemMessage(`Language switched to ${langConfig[currentLangCode].name}.`);
+        }
+
+        async function startInitialConversation() {
+            startLessonBtn.classList.add('hidden');
+            micBtn.classList.remove('hidden');
+            
+            // Clear history and start fresh
+            chatHistory = [];
+            chatBox.innerHTML = '';
+            
+            // Pre-warm the voices loading in some browsers
+            synth.getVoices();
+            
+            const introText = langConfig[currentLangCode].greeting;
+            
+            // Add initial context to Gemini
+            chatHistory.push({ role: "user", parts: [{ text: "Hello. Let's start the lesson." }] });
+            chatHistory.push({ role: "model", parts: [{ text: introText }] });
+            
+            addMessageToUI('model', introText);
+            speakText(introText);
+        }
+
+        function toggleMicrophone() {
+            if (!recognition) initSpeechRecognition();
+
+            if (isSpeaking) {
+                synth.cancel(); // Stop talking if user wants to speak
+                isSpeaking = false;
+            }
+
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                try {
+                    recognition.lang = currentLangCode;
+                    recognition.start();
+                } catch (e) {
+                    console.error("Mic start error:", e);
+                }
+            }
+        }
+
+        async function handleUserSpeech(text) {
+            if (!text.trim()) return;
+
+            // 1. Show user message
+            addMessageToUI('user', text);
+            
+            // 2. Add to history
+            chatHistory.push({ role: "user", parts: [{ text: text }] });
+
+            // 3. Call AI
+            await fetchAIResponse();
+        }
+
+        async function fetchAIResponse() {
+            const languageName = langConfig[currentLangCode].name;
+            const systemPrompt = `You are a friendly, encouraging, and highly conversational language tutor helping the user practice ${languageName}. 
+RULES:
+1. Respond ONLY in ${languageName}.
+2. Keep responses very conversational and short (maximum 2 sentences).
+3. If the user makes a grammatical error or unnatural phrasing in their last message, gently correct them FIRST, then continue the conversation.
+4. Always end your response with a follow-up question to keep the conversation going.
+5. Use plain text only (no markdown, bold, or lists) so it can be read smoothly by Text-To-Speech.`;
+
+            const payload = {
+                contents: chatHistory,
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            const apiKey = ""; // Canvas auto-injects
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            showTypingIndicator();
+
+            try {
+                // Exponential backoff logic implementation wrapper
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                hideTypingIndicator();
+
+                if (result.candidates && result.candidates[0].content) {
+                    const aiText = result.candidates[0].content.parts[0].text;
+                    chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+                    addMessageToUI('model', aiText);
+                    speakText(aiText);
+                } else {
+                    throw new Error("Invalid AI response");
+                }
+            } catch (error) {
+                console.error("AI API Error:", error);
+                hideTypingIndicator();
+                statusText.innerText = "Connection error. Try speaking again.";
+                showSystemMessage("Error connecting to the AI. Please check your connection.");
+            }
+        }
+
+        // Retry helper for the API
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status === 429) throw new Error("Rate limited");
+                    return response;
+                } catch (err) {
+                    if (i === maxRetries - 1) throw err;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // --- Text-To-Speech (Synthesis) ---
+        function speakText(text) {
+            if (synth.speaking) synth.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = currentLangCode;
+            
+            // Try to find the most natural voice for the language
+            const voices = synth.getVoices();
+            const preferredVoice = voices.find(v => v.lang === currentLangCode && (v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Natural')));
+            const fallbackVoice = voices.find(v => v.lang.startsWith(currentLangCode.split('-')[0]));
+            
+            if (preferredVoice) utterance.voice = preferredVoice;
+            else if (fallbackVoice) utterance.voice = fallbackVoice;
+
+            // Voice settings
+            utterance.rate = 0.95; // Slightly slower for language learning
+            utterance.pitch = 1;
+
+            utterance.onstart = () => {
+                isSpeaking = true;
+                statusText.innerText = "Tutor is speaking...";
+                micBtn.disabled = true;
+            };
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                statusText.innerText = "Ready to speak";
+                micBtn.disabled = false;
+                
+                // Auto-start listening after tutor finishes speaking
+                setTimeout(() => {
+                    if (!isRecording && !synth.speaking) {
+                        toggleMicrophone();
+                    }
+                }, 800);
+            };
+
+            utterance.onerror = (e) => {
+                console.error("TTS Error:", e);
+                isSpeaking = false;
+                micBtn.disabled = false;
+                statusText.innerText = "Ready to speak";
+            };
+
+            synth.speak(utterance);
+        }
+
+        // Fix for browser voice loading (Chrome sometimes needs a moment to populate voices)
+        speechSynthesis.onvoiceschanged = () => { synth.getVoices(); };
+
+        // --- UI Updates ---
+        
+        function updateMicUI() {
+            if (isRecording) {
+                micBtn.classList.replace('bg-blue-600', 'bg-red-500');
+                micBtn.classList.replace('hover:bg-blue-700', 'hover:bg-red-600');
+                micBtn.classList.add('pulse-animation');
+                micIcon.classList.replace('fa-microphone', 'fa-stop');
+            } else {
+                micBtn.classList.replace('bg-red-500', 'bg-blue-600');
+                micBtn.classList.replace('hover:bg-red-600', 'hover:bg-blue-700');
+                micBtn.classList.remove('pulse-animation');
+                micIcon.classList.replace('fa-stop', 'fa-microphone');
+            }
+        }
+
+        function addMessageToUI(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex w-full message-appear ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+
+            let innerHTML = '';
+            
+            if (sender === 'user') {
+                innerHTML = `
+                    <div class="max-w-[80%] bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
+                        <p class="text-[15px] leading-relaxed">${text}</p>
+                    </div>
+                `;
+            } else {
+                innerHTML = `
+                    <div class="max-w-[80%] flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 flex-shrink-0 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-200 mt-1">
+                            <i class="fa-solid fa-robot text-sm"></i>
+                        </div>
+                        <div class="bg-white border border-slate-200 text-slate-700 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                            <p class="text-[15px] leading-relaxed">${text}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            msgDiv.innerHTML = innerHTML;
+            chatBox.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function showSystemMessage(text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex justify-center my-2 message-appear`;
+            msgDiv.innerHTML = `
+                <div class="bg-slate-200 text-slate-600 text-xs px-3 py-1.5 rounded-full font-medium">
+                    ${text}
+                </div>
+            `;
+            chatBox.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            typingIndicator.classList.remove('hidden');
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.classList.add('hidden');
+        }
+
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Initialize Speech Recognition on load
+        window.onload = () => {
+            initSpeechRecognition();
+        };
+
+    </script>
+</body>
+</html>
