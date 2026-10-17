@@ -224,7 +224,7 @@
             showSystemMessage(`Language switched to ${langConfig[currentLangCode].name}.`);
         }
 
-        async function startInitialConversation() {
+         startInitialConversation() {
             startLessonBtn.classList.add('hidden');
             micBtn.classList.remove('hidden');
             
@@ -278,9 +278,75 @@
             await fetchAIResponse();
         }
 
-        async function fetchAIResponse() {
-            const languageName = langConfig[currentLangCode].name;
-            const systemPrompt = `You are a friendly, encouraging, and highly conversational language tutor helping the user practice ${languageName}. 
+        
+async function fetchAIResponse() {
+    const languageName = langConfig[currentLangCode].name;
+
+    const systemPrompt = `You are a friendly, encouraging, and highly conversational language tutor helping the user practice ${languageName}.
+RULES:
+1. Respond ONLY in ${languageName}.
+2. Keep responses very conversational and short (maximum 2 sentences).
+3. If the user makes a grammatical error or unnatural phrasing, gently correct it FIRST, then continue the conversation.
+4. Always end your response with a follow-up question.
+5. Use plain text only, no markdown or lists.`;
+
+    showTypingIndicator();
+
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                contents: chatHistory,
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            })
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const message =
+                result?.error?.message || `HTTP ${response.status}`;
+
+            throw new Error(message);
+        }
+
+        const aiText = result?.candidates?.[0]?.content?.parts
+            ?.map(part => part.text || "")
+            .join("")
+            .trim();
+
+        if (!aiText) {
+            throw new Error("Gemini returned no text.");
+        }
+
+        chatHistory.push({
+            role: "model",
+            parts: [{ text: aiText }]
+        });
+
+        addMessageToUI("model", aiText);
+        speakText(aiText);
+
+    } catch (error) {
+        console.error("AI API Error:", error);
+
+        statusText.innerText =
+            "AI connection failed. Check the browser console.";
+
+        showSystemMessage(
+            "Couldn't connect to the AI. Check the API setup and console."
+        );
+
+    } finally {
+        hideTypingIndicator();
+    }
+}
+ 
 RULES:
 1. Respond ONLY in ${languageName}.
 2. Keep responses very conversational and short (maximum 2 sentences).
