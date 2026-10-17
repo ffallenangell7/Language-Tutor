@@ -224,7 +224,7 @@
             showSystemMessage(`Language switched to ${langConfig[currentLangCode].name}.`);
         }
 
-         startInitialConversation() {
+         async function startInitialConversation() {
             startLessonBtn.classList.add('hidden');
             micBtn.classList.remove('hidden');
             
