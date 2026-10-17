@@ -346,67 +346,6 @@ RULES:
         hideTypingIndicator();
     }
 }
- 
-RULES:
-1. Respond ONLY in ${languageName}.
-2. Keep responses very conversational and short (maximum 2 sentences).
-3. If the user makes a grammatical error or unnatural phrasing in their last message, gently correct them FIRST, then continue the conversation.
-4. Always end your response with a follow-up question to keep the conversation going.
-5. Use plain text only (no markdown, bold, or lists) so it can be read smoothly by Text-To-Speech.`;
-
-            const payload = {
-                contents: chatHistory,
-                systemInstruction: { parts: [{ text: systemPrompt }] }
-            };
-
-            const apiKey = "AQ.Ab8RN6JzaJcNC-YMGrufi1vX533EEFp0UiwPqnjzDlYNCJgYwg"; // Tu clave copiada
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`; // Modelo corregido
-
-            showTypingIndicator();
-
-            try {
-                // Exponential backoff logic implementation wrapper
-                const response = await fetchWithRetry(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await response.json();
-                hideTypingIndicator();
-
-                if (result.candidates && result.candidates[0].content) {
-                    const aiText = result.candidates[0].content.parts[0].text;
-                    chatHistory.push({ role: "model", parts: [{ text: aiText }] });
-                    addMessageToUI('model', aiText);
-                    speakText(aiText);
-                } else {
-                    throw new Error("Invalid AI response");
-                }
-            } catch (error) {
-                console.error("AI API Error:", error);
-                hideTypingIndicator();
-                statusText.innerText = "Connection error. Try speaking again.";
-                showSystemMessage("Error connecting to the AI. Please check your connection.");
-            }
-        }
-
-        // Retry helper for the API
-        async function fetchWithRetry(url, options, maxRetries = 3) {
-            let delay = 1000;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.status === 429) throw new Error("Rate limited");
-                    return response;
-                } catch (err) {
-                    if (i === maxRetries - 1) throw err;
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2;
-                }
-            }
-        }
-
         // --- Text-To-Speech (Synthesis) ---
         function speakText(text) {
             if (synth.speaking) synth.cancel();
