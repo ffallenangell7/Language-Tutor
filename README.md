@@ -1,2 +1,2 @@
 # Language-Tutor
-AI language tutor, builded to help you out getting better with any language. 
+AI language tutor, built to help you get better at any language. 
