@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
           "x-goog-api-key": apiKey
         },
         body: JSON.stringify({
-          model: "gemini-3.8-flash-tts",
+          model: "gemini-3.8-flash-lite-tts",
           input: [{
             type: "user_input",
             content: [{
