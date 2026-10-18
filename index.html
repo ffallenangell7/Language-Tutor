@@ -317,9 +317,6 @@ function toggleMicrophone() {
         recognition.stop();
     } else {
         try {
-recognizedSegments = [];
-clearTimeout(speechSubmitTimer);
-speechSubmitTimer = null;
             recognition.lang = currentLangCode;
             recognition.start();
         } catch (error) {
