@@ -167,9 +167,9 @@ let isProcessingSpeech = false;
 
             recognition = new SpeechRecognition();
             recognition.continuous = false;
-recognition.interimResults = false;
-recognition.maxAlternatives = 1;
-recognition.lang = currentLangCode;
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            recognition.lang = currentLangCode;
 
             recognition.onstart = function() {
                 isRecording = true;
@@ -177,24 +177,35 @@ recognition.lang = currentLangCode;
                 statusText.innerText = "Listening...";
             };
 
-            recognition.onresult = function(event) {
+            
+recognition.onresult = async function(event) {
     if (isProcessingSpeech) return;
 
-    for (
-        let i = event.resultIndex;
-        i < event.results.length;
-        i++
-    ) {
-        const result = event.results[i];
+    const result = event.results[event.resultIndex];
 
-        if (result.isFinal) {
-            const transcript = result[0].transcript.trim();
+    if (!result || !result.isFinal) return;
 
-            if (transcript) {
-                recognizedSegments[i] = transcript;
-            }
+    const transcript = result[0].transcript.trim();
+
+    if (!transcript) return;
+
+    isProcessingSpeech = true;
+    micBtn.disabled = true;
+    statusText.innerText = "Processing your sentence...";
+
+    try {
+        await handleUserSpeech(transcript);
+    } catch (error) {
+        console.error("Speech submission error:", error);
+    } finally {
+        isProcessingSpeech = false;
+
+        if (!isSpeaking) {
+            micBtn.disabled = false;
         }
     }
+};
+
 
     const transcript = recognizedSegments
         .filter(Boolean)
