@@ -130,9 +130,14 @@
         let isRecording = false;
         let isSpeaking = false;
         let chatHistory = [];
-        let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
-        const synth = window.speechSynthesis;
+        
+let SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let recognition = null;
+let currentAudio = null;
+let audioObjectUrl = null;
+
 
         // UI Elements
         const chatBox = document.getElementById('chatBox');
