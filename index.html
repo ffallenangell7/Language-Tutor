@@ -180,10 +180,40 @@ let isProcessingSpeech = false;
             };
 
             recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                statusText.innerText = "Processing...";
-                handleUserSpeech(transcript);
-            };
+    if (isProcessingSpeech) return;
+
+    for (
+        let i = event.resultIndex;
+        i < event.results.length;
+        i++
+    ) {
+        const result = event.results[i];
+
+        if (result.isFinal) {
+            const transcript = result[0].transcript.trim();
+
+            if (transcript) {
+                recognizedSegments[i] = transcript;
+            }
+        }
+    }
+
+    const transcript = recognizedSegments
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (!transcript) return;
+
+    statusText.innerText = "Listening... finish your sentence";
+
+    clearTimeout(speechSubmitTimer);
+
+    speechSubmitTimer = setTimeout(() => {
+        submitRecognizedSpeech();
+    }, 1800);
+};
 
             recognition.onerror = function(event) {
                 // Ignore "no-speech" in console as it's a common, non-fatal timeout
