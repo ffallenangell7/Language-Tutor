@@ -168,8 +168,9 @@ let isProcessingSpeech = false;
             }
 
             recognition = new SpeechRecognition();
-            recognition.continuous = false; // Stop after a pause
-            recognition.interimResults = false; // Only final results
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
             recognition.lang = currentLangCode;
 
             recognition.onstart = function() {
