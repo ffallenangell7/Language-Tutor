@@ -257,45 +257,6 @@ recognition.onresult = async function(event) {
             };
         }
 
-        async function submitRecognizedSpeech() {
-    if (isProcessingSpeech) return;
-
-    clearTimeout(speechSubmitTimer);
-    speechSubmitTimer = null;
-
-    const text = recognizedSegments
-        .filter(Boolean)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
-
-    recognizedSegments = [];
-
-    if (!text) return;
-
-    isProcessingSpeech = true;
-    micBtn.disabled = true;
-    statusText.innerText = "Processing your sentence...";
-
-    if (recognition && isRecording) {
-        try {
-            recognition.stop();
-        } catch (error) {
-            console.warn("Could not stop recognition:", error);
-        }
-    }
-
-    try {
-        await handleUserSpeech(text);
-    } finally {
-        isProcessingSpeech = false;
-
-        if (!isSpeaking) {
-            micBtn.disabled = false;
-        }
-    }
-}
-
         // --- Core Application Logic ---
 
         function changeLanguage() {
