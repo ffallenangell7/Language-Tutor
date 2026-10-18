@@ -250,25 +250,40 @@ let audioObjectUrl = null;
             speakText(introText);
         }
 
-        function toggleMicrophone() {
-            if (!recognition) initSpeechRecognition();
+        
+function toggleMicrophone() {
+    if (!recognition) initSpeechRecognition();
+    if (!recognition) return;
 
-            if (isSpeaking) {
-                synth.cancel(); // Stop talking if user wants to speak
-                isSpeaking = false;
-            }
-
-            if (isRecording) {
-                recognition.stop();
-            } else {
-                try {
-                    recognition.lang = currentLangCode;
-                    recognition.start();
-                } catch (e) {
-                    console.error("Mic start error:", e);
-                }
-            }
+    if (isSpeaking) {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio.src = "";
+            currentAudio = null;
         }
+
+        if (audioObjectUrl) {
+            URL.revokeObjectURL(audioObjectUrl);
+            audioObjectUrl = null;
+        }
+
+        isSpeaking = false;
+        micBtn.disabled = false;
+    }
+
+    if (isRecording) {
+        recognition.stop();
+    } else {
+        try {
+            recognition.lang = currentLangCode;
+            recognition.start();
+        } catch (error) {
+            console.error("Mic start error:", error);
+        }
+    }
+}
+
 
         async function handleUserSpeech(text) {
             if (!text.trim()) return;
