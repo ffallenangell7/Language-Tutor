@@ -138,6 +138,10 @@ let recognition = null;
 let currentAudio = null;
 let audioObjectUrl = null;
 
+let recognizedSegments = [];
+let speechSubmitTimer = null;
+let isProcessingSpeech = false;
+
 
         // UI Elements
         const chatBox = document.getElementById('chatBox');
