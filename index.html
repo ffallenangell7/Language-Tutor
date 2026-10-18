@@ -237,9 +237,6 @@ let audioObjectUrl = null;
             chatHistory = [];
             chatBox.innerHTML = '';
             
-            // Pre-warm the voices loading in some browsers
-            synth.getVoices();
-            
             const introText = langConfig[currentLangCode].greeting;
             
             // Add initial context to Gemini
