@@ -367,52 +367,135 @@ RULES:
     }
 }
         // --- Text-To-Speech (Synthesis) ---
-        function speakText(text) {
-            if (synth.speaking) synth.cancel();
+        
+async function speakText(text) {
+    // Stop any previous generated audio.
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.src = "";
+        currentAudio = null;
+    }
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = currentLangCode;
-            
-            // Try to find the most natural voice for the language
-            const voices = synth.getVoices();
-            const preferredVoice = voices.find(v => v.lang === currentLangCode && (v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Natural')));
-            const fallbackVoice = voices.find(v => v.lang.startsWith(currentLangCode.split('-')[0]));
-            
-            if (preferredVoice) utterance.voice = preferredVoice;
-            else if (fallbackVoice) utterance.voice = fallbackVoice;
+    if (audioObjectUrl) {
+        URL.revokeObjectURL(audioObjectUrl);
+        audioObjectUrl = null;
+    }
 
-            // Voice settings
-            utterance.rate = 0.95; // Slightly slower for language learning
-            utterance.pitch = 1;
+    isSpeaking = true;
+    micBtn.disabled = true;
+    statusText.innerText = "Generating natural voice...";
 
-            utterance.onstart = () => {
-                isSpeaking = true;
-                statusText.innerText = "Tutor is speaking...";
-                micBtn.disabled = true;
-            };
+    try {
+        const response = await fetch("/api/speech", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                text: text,
+                languageCode: currentLangCode
+            })
+        });
 
-            utterance.onend = () => {
-                isSpeaking = false;
-                statusText.innerText = "Ready to speak";
-                micBtn.disabled = false;
-                
-                // Auto-start listening after tutor finishes speaking
-                setTimeout(() => {
-                    if (!isRecording && !synth.speaking) {
-                        toggleMicrophone();
-                    }
-                }, 800);
-            };
+        const result = await response.json().catch(() => ({}));
 
-            utterance.onerror = (e) => {
-                console.error("TTS Error:", e);
-                isSpeaking = false;
-                micBtn.disabled = false;
-                statusText.innerText = "Ready to speak";
-            };
-
-            synth.speak(utterance);
+        if (!response.ok) {
+            throw new Error(
+                result.error || `HTTP ${response.status}`
+            );
         }
+
+        if (!result.audio || typeof result.audio !== "string") {
+            throw new Error("No audio data received.");
+        }
+
+        // Decode Gemini's Base64 audio into a WAV file.
+        const binary = atob(result.audio);
+        const bytes = new Uint8Array(binary.length);
+
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+
+        const blob = new Blob([bytes], {
+            type: result.mimeType || "audio/wav"
+        });
+
+        const objectUrl = URL.createObjectURL(blob);
+        audioObjectUrl = objectUrl;
+
+        const audio = new Audio(objectUrl);
+        currentAudio = audio;
+
+        audio.onplay = () => {
+            statusText.innerText = "Tutor is speaking...";
+        };
+
+        audio.onended = () => {
+            if (currentAudio !== audio) return;
+
+            currentAudio = null;
+            URL.revokeObjectURL(objectUrl);
+
+            if (audioObjectUrl === objectUrl) {
+                audioObjectUrl = null;
+            }
+
+            isSpeaking = false;
+            micBtn.disabled = false;
+            statusText.innerText = "Ready to speak";
+
+            // Resume listening after the tutor finishes.
+            setTimeout(() => {
+                if (!isRecording && !currentAudio) {
+                    toggleMicrophone();
+                }
+            }, 800);
+        };
+
+        audio.onerror = () => {
+            if (currentAudio !== audio) return;
+
+            currentAudio = null;
+            URL.revokeObjectURL(objectUrl);
+
+            if (audioObjectUrl === objectUrl) {
+                audioObjectUrl = null;
+            }
+
+            isSpeaking = false;
+            micBtn.disabled = false;
+            statusText.innerText = "Audio playback failed.";
+
+            console.error("Generated audio could not be played.");
+        };
+
+        await audio.play();
+
+    } catch (error) {
+        console.error("AI voice error:", error);
+
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.src = "";
+            currentAudio = null;
+        }
+
+        if (audioObjectUrl) {
+            URL.revokeObjectURL(audioObjectUrl);
+            audioObjectUrl = null;
+        }
+
+        isSpeaking = false;
+        micBtn.disabled = false;
+        statusText.innerText = "AI voice failed. Check the logs.";
+
+        showSystemMessage(
+            "Couldn't generate or play the AI voice. Check the console and Vercel logs."
+        );
+    }
+}
+
 
         // Fix for browser voice loading (Chrome sometimes needs a moment to populate voices)
         speechSynthesis.onvoiceschanged = () => { synth.getVoices(); };
