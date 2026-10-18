@@ -27,8 +27,9 @@ module.exports = async function handler(req, res) {
   }
 
   const speechStyles = {
-    "en-US":
-      "Speak in natural American English with a warm, friendly voice, relaxed conversational pacing, authentic American pronunciation, and natural intonation.",
+    
+"en-US":
+  "Speak in a natural, friendly General American English accent. Use everyday American pronunciation, relaxed connected speech, varied natural intonation, clear but not over-enunciated articulation, and a moderate conversational pace. Sound like a warm, encouraging American language tutor. Avoid a British accent.",
     "fr-FR":
       "Speak natural French as used in France, with authentic French pronunciation and conversational intonation.",
     "pt-BR":
