@@ -493,10 +493,6 @@ async function speakText(text) {
     }
 }
 
-
-        // Fix for browser voice loading (Chrome sometimes needs a moment to populate voices)
-        speechSynthesis.onvoiceschanged = () => { synth.getVoices(); };
-
         // --- UI Updates ---
         
         function updateMicUI() {
