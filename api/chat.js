@@ -8,6 +8,14 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  const allowed = await enforceRateLimit(req, res, {
+    scope: "chat",
+    limit: 20,
+    windowMs: 60_000
+  });
+
+  if (!allowed) return;
+  
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
