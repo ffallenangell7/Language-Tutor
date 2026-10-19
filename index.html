@@ -206,24 +206,6 @@ recognition.onresult = async function(event) {
     }
 };
 
-
-    const transcript = recognizedSegments
-        .filter(Boolean)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
-
-    if (!transcript) return;
-
-    statusText.innerText = "Listening... finish your sentence";
-
-    clearTimeout(speechSubmitTimer);
-
-    speechSubmitTimer = setTimeout(() => {
-        submitRecognizedSpeech();
-    }, 1800);
-};
-
             recognition.onerror = function(event) {
                 // Ignore "no-speech" in console as it's a common, non-fatal timeout
                 if (event.error !== 'no-speech') {
